@@ -1,7 +1,50 @@
+# ==============================
+#  🧩 Python / Flask
+# ==============================
 __pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# 仮想環境 (venv 等)
 venv/
 venv30/
 venv310/
+.env/
+.venv/
+
+# Python バイトコード
 *.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ==============================
+#  🖥 フロントエンド (HTML/JS/CSS)
+# ==============================
+node_modules/
+dist/
+*.log
+
+# Build artifacts (ViteやParcelを使う場合)
+build/
+.cache/
+
+# ==============================
+#  🍎 macOS
+# ==============================
 .DS_Store
+.AppleDouble
+.LSOverride
+
+# サムネイル
+._*
+
+# Spotlight & TimeMachine
+.Spotlight-V100
+.Trashes
+
+# macOS の隠し設定ファイル
+*.swp
+
 
