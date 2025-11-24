@@ -1,0 +1,367 @@
+    /* 盤のルート要素に合わせてクラス/IDを置き換えてください */
+    .board {
+      cursor: grab;         /* 通常時 = 手のひら */
+    }
+    .board.dragging {
+      cursor: grabbing;     /* ドラッグ中 = つかんだ手 */
+    }
+
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    .title {
+      text-align: center;
+      margin-top: 10px;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .main-layout {
+      display: flex;
+      align-items: flex-start;  /* 🔸追加で縦位置を上揃え */
+      height: 90vh;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    .left-panel {
+      width: 250px;  /* ✅追加 */
+      min-height: 460px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .captured-area {
+      margin: 10px;
+    }
+
+    .captured-label {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .captured-box {
+      border: 2px solid black;
+      background-color: #fdf9dc;
+      padding: 5px;
+      min-height: 50px;
+      width: 250px;
+      display: flex;      /* ← 追加 */
+      flex-wrap: wrap;    /* ← 追加 */
+      gap: 4px;           /* ← 追加（任意） */
+      box-sizing: border-box;
+}
+    }
+
+    /* 駒台の駒 */
+    .captured-piece {
+      transform: none; /* 回転しない（wrapperがすでに向きを持っている） */
+      width: 24px;
+      height: 24px;
+      font-size: 16px;
+      margin: 2px;
+      display: inline-flex;     /* ← 追加 */
+      justify-content: center;
+      align-items: center;
+      /* margin: 2px;  ← gapを使うなら不要 */
+      box-sizing: border-box;
+    }
+
+    .center-panel {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      min-width: 500px;
+    }
+
+    .board-area {
+      display: grid;
+      grid-template-columns: repeat(9, 50px);
+      grid-template-rows: repeat(9, 50px);
+      gap: 1px;
+      border: 2px solid black;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      border: 1px solid black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .cell-debug {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      font-size: 10px;
+      color: red;
+    }
+
+    #right-panel {
+      flex: 1;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border-left: 1px solid #ccc;
+      min-width: 250px;
+      box-sizing: border-box;
+    }
+
+    input,
+    button {
+      margin-bottom: 10px;
+    }
+
+    #captured-pieces-opponent,
+    #captured-pieces-self {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      min-height: 40px;
+      width: 250px;
+      border: 2px solid black;
+      padding: 5px;
+      background-color: #f5f5dc;
+      font-size: 12px;
+      box-sizing: border-box;
+    }
+
+    .cell {
+      border: 1px solid black;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: visible;
+      position: relative;
+    }
+
+    /* 駒のラッパー */
+    .piece-wrapper {
+      width: 44px;
+      height: 44px;
+      background-color: #e0a94f;
+      clip-path: polygon(50% 0%, 85% 20%, 95% 95%, 5% 95%, 15% 20%);
+      border: 2px solid black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
+
+    .piece-wrapper.ai-piece {
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+
+    /* 駒の文字 */
+    .piece {
+      font-family: 'Kiwi Maru', 'Klee One', serif;
+      font-weight: 700;
+      font-size: 18px;
+      color: black;
+    }
+    
+    .piece.opp-piece {
+      /* display: inline-block; */
+      /* transform: rotate(180deg); */
+      transform-origin: center center;
+    }
+
+    .piece-wrapper.opp-piece {
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+
+    /* 成り駒を赤く */
+    .promoted {
+      color: red;
+    }
+
+    /* AIの駒（下向き） */
+    .ai-piece {
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+
+    .sub-piece {
+      transform: rotate(180deg);
+      transform-origin: center center;
+    }
+
+    /* 選択中のセルのハイライト */
+    .selected {
+      outline: 2px solid red;
+      background-color: #ffe4e1;
+    }
+
+    .captured-piece.selected {
+      border: 2px solid red;
+      box-shadow: 0 0 4px red;
+    }
+
+    /* メッセージ表示欄 */
+    .message-box {
+      font-size: 20px;
+      font-weight: bold;
+      color: darkred;
+      max-height: 40px;
+      overflow: auto;
+      min-height: 40px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      background-color: #eee;
+      border: 1px solid white;
+      padding: 10px;
+
+    }
+
+    #replay-message {
+      font-size: 0.9em;
+      color: #0044cc;
+      /* 青系 */
+      line-height: 1.4;
+      margin-top: 6px;
+    }
+
+    /* 各種ボタンスタイル */
+    .select-button {
+      padding: 6px 12px;
+      border: 1px solid black;
+      border-radius: 4px;
+      background-color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .select-button.selected {
+      background-color: #cceeff;
+    }
+
+    .select-button:disabled {
+      background-color: #ddd;
+      cursor: not-allowed;
+    }
+
+    #start-button {
+      padding: 6px 16px;
+      background-color: #e0e0e0;
+      border: 1px solid black;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    #start-button.started {
+      background-color: #a0ffa0;
+      cursor: not-allowed;
+    }
+
+    #start-button.playing {
+      background-color: crimson;
+      color: white;
+      border: 2px solid darkred;
+    }
+
+    .highlight-from {
+      background-color: #87CEFA !important;
+    }
+
+    .highlight-to {
+      background-color: #87CEFA !important;
+    }
+
+    .highlight-middle {
+      background-color: #FFFF00 !important;
+      border: 2p black !important;
+    }
+
+    .highlight-drop {
+      background-color: #FF00FF !important;
+      /* ← !important を追加 */
+    }
+
+    .cell-debug {
+      position: absolute;
+      top: 1px;
+      left: 2px;
+      font-size: 8px;
+      color: red;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .piece-wrapper.highlight-drop {
+      background-color: #ffcccc !important;
+      /* やや赤系 */
+    }
+
+    #login-id-display {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      background-color: white;
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    #user-info {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      font-weight: bold;
+      z-index: 999;
+    }
+
+
+    #thinking-banner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: yellow;
+      padding: 8px 16px;
+      border: 2px solid black;
+      font-weight: bold;
+      z-index: 9999;
+      display: none;
+      animation: blink-text 0.5s infinite;
+    }
+
+    .check-badge{
+      margin-left:8px; padding:2px 8px; border-radius:12px;
+      background:#d32f2f; color:#fff; font-weight:700; display:none;
+    }
+
+    @keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+    }
+
+    @keyframes blink-text {
+
+      0%,
+      100% {
+        color: black;
+      }
+
+      50% {
+        color: red;
+      }
+    }
+ 
+

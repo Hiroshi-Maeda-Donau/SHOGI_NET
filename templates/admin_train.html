@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <title>AI Training</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 20px; }
+    .row { margin-bottom: 10px; }
+    .log { white-space: pre-wrap; background: #111; color: #ddd; padding: 8px; height: 320px; overflow:auto; }
+    .progress { height: 12px; background:#eee; border-radius:6px; overflow:hidden; }
+    .bar { height: 12px; width:0%; background:#4caf50; }
+  </style>
+</head>
+<body>
+  <h2>AI Training (Admin only)</h2>
+
+  <div class="row">
+    <label>Trainer ID:</label>
+    <input id="trainer-id" placeholder="shogi_master" style="width:150px;" />
+  </div>
+
+  <div class="row">
+    <label>Target AI:</label>
+    <select id="which">
+      <option value="policy">Policy (指し手分布)</option>
+      <!-- 将来: value, value+policy 等を追加 -->
+    </select>
+  </div>
+
+  <div class="row">
+    <label>Mode:</label>
+    <label><input type="radio" name="mode" value="incremental" checked /> 増分学習</label>
+    <label><input type="radio" name="mode" value="full" /> 全再学習</label>
+  </div>
+
+  <div class="row">
+    <label>Folder:</label>
+    <input id="folder" value="kifu/pvp" style="width:200px;" />
+    <label>Extra Folder:</label>
+    <input id="extra-folder" value="kifu/pvp_flip" style="width:220px">
+  </div>
+
+  <div class="row">
+    <label>Registry:</label>
+    <input id="registry" value="kifu/registry/main.json" style="width:220px;">
+    <label style="margin-left:12px;">Extra Registry:</label>
+    <input id="extra-registry" value="kifu/registry/flip.json" style="width:220px;">
+  </div>
+
+  <div class="row">
+    <label>Epochs:</label>
+    <input id="epochs" type="number" value="3" min="1" style="width:80px;" />
+    <label style="margin-left:12px;">Batch:</label>
+    <input id="batch" type="number" value="64" min="8" style="width:80px;" />
+  </div>
+
+  <div class="row">
+    <button id="btn-start">Start</button>
+    <button id="btn-refresh">Refresh</button>
+    <button id="btn-home" onclick="location.href='/'">メインメニューへ</button>
+  </div>
+
+  <!-- 🧩 ここから追加: 反転棋譜生成UI -->
+  <div style="margin-top:16px;border-top:1px solid #ccc;padding-top:12px">
+    <h4>反転棋譜の生成</h4>
+    <div>
+      <label>元フォルダ: </label>
+      <input id="flip-src" value="kifu/pvp" style="width:220px">
+      <label style="margin-left:12px">出力先: </label>
+      <input id="flip-dst" value="kifu/pvp_flip" style="width:220px">
+    </div>
+    <div style="margin-top:8px">
+      <label><input type="checkbox" id="flip-finished" checked> 終局のみ</label>
+      <label style="margin-left:12px"><input type="checkbox" id="flip-overwrite"> 既存は上書き</label>
+    </div>
+    <button id="btn-flip" onclick="startFlip()">反転生成を実行</button>
+    <pre id="flip-log" style="height:160px;overflow:auto;background:#111;color:#0f0;padding:8px"></pre>
+  </div>
+  <!-- 🧩 追加ここまで -->
+
+  <div class="row">
+    <div class="progress"><div id="bar" class="bar"></div></div>
+  </div>
+
+  <div class="row">
+    <div id="log" class="log"></div>
+  </div>
+
+<script>
+  let flipPollTimer = null;
+  let timer = null;
+
+  function getMode() {
+    const val = document.querySelector('input[name="mode"]:checked').value;
+    return val; // "incremental" | "full"
+  }
+  function setProgress(p) {
+    const pct = Math.round((p||0)*100);
+    document.getElementById('bar').style.width = pct + '%';
+  }
+
+  async function poll() {
+    try {
+      const s = await fetch('/api/train/status').then(r=>r.json());
+      setProgress(s.progress || 0);
+      const logs = await fetch('/api/train/logs?n=200').then(r=>r.json());
+      const logEl = document.getElementById('log');
+      logEl.textContent = logs.lines.join('\n');
+      logEl.scrollTop = logEl.scrollHeight;
+
+      if (!s.running && timer) {
+        clearInterval(timer); timer = null;
+      }
+    } catch (e) { console.error(e); }
+  }
+
+  async function startFlip() {
+    const log = document.getElementById('flip-log');
+    const src = document.getElementById('flip-src').value.trim();
+    const dst = document.getElementById('flip-dst').value.trim();
+    const onlyFinished = document.getElementById('flip-finished').checked;
+    const overwrite = document.getElementById('flip-overwrite').checked;
+
+    // ※ ここはあなたの実装に合わせて playerID を取得
+    const playerID = window.playerID || document.getElementById('login-id-input')?.value || "";
+
+    log.textContent = "🔁 反転処理を開始...\n";
+
+    // 1) ジョブ開始（token を受け取る）
+    const res = await fetch('/api/flip/start', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        player_id: playerID,
+        src, dst,
+        finished_only: onlyFinished,
+        overwrite
+      })
+    });
+    const j = await res.json();
+    if (!res.ok) {
+      log.textContent += "💥 エラー: " + (j.error || res.statusText) + "\n";
+      return;
+    }
+
+    const token = j.token;
+    log.textContent += "🪙 token: " + token + "\n";
+
+    // 2) ステータスをポーリング
+    if (flipPollTimer) clearInterval(flipPollTimer);
+    flipPollTimer = setInterval(async () => {
+      try {
+        const r2 = await fetch('/api/flip/status?token=' + encodeURIComponent(token));
+        const s = await r2.json();
+        if (!r2.ok) throw new Error(s.error || 'status fetch failed');
+
+        // 最新 200 行が返る仕様
+        log.textContent = s.lines.join("\n");
+        log.scrollTop = log.scrollHeight;
+
+        if (s.done) {
+          clearInterval(flipPollTimer);
+          flipPollTimer = null;
+          log.textContent += "\n✅ 完了\n";
+        }
+      } catch (e) {
+        clearInterval(flipPollTimer);
+        flipPollTimer = null;
+        log.textContent += "\n💥 ポーリング失敗: " + e.message + "\n";
+      }
+    }, 800);
+  }
+
+  document.getElementById('btn-start').onclick = async () => {
+    const player_id = document.getElementById('trainer-id').value.trim();
+    if (!player_id) { alert("Trainer ID を入力してください"); return; }
+
+    const body = {
+      player_id,
+      which: document.getElementById('which').value,
+      folder: document.getElementById('folder').value,
+      extra_folder: document.getElementById('extra-folder').value || "", 
+      epochs: parseInt(document.getElementById('epochs').value || '3', 10),
+      batch:  parseInt(document.getElementById('batch').value  || '64', 10),
+      full_reset: (getMode()==="full"),
+      registry: document.getElementById('registry').value,
+      extra_registry: document.getElementById('extra-registry').value
+    };
+
+    const res = await fetch('/api/train/start', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    const j = await res.json();
+    if (!res.ok) { alert(j.error || 'start failed'); return; }
+
+    if (!timer) timer = setInterval(poll, 1000);
+    await poll();
+  };
+
+  document.getElementById('btn-refresh').onclick = () => {
+    if (!timer) timer = setInterval(poll, 1000);
+    poll();
+  };
+
+  // 初期poll
+  poll();
+</script>
+
+</body>
+</html>
+

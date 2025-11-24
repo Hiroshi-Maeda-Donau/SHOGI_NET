@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <script>
+    window.playerID = "{{ session.get('player_id') }}";
+    window.role = "{{ session.get('role') }}";
+  </script>
+
+  <meta charset="UTF-8">
+  <title>AI Shogi Game</title>
+  <link href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&family=Kiwi+Maru:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+  <!-- ログインID表示：右上固定 -->
+  <div id="login-id-display">
+    ID: <span id="login-id-text"></span>
+  </div>
+
+  <!-- タイトル中央 -->
+  <div style="text-align: center; margin-top: 20px;">
+    <div id="title-text" style="font-size: 32px; font-weight: bold;">
+      AI将棋
+    </div>
+  </div>
+  
+  <!-- メインレイアウト：将棋盤 + 左右 -->
+  <div class="main-layout" style="display: flex; margin-top: 10px;">
+
+    <!-- 左 -->
+    <div class="left-panel">
+      <div class="captured-area">
+        <div class="captured-label">AIの駒台</div>
+        <div id="captured-pieces-ai" class="captured-box"></div>
+      </div>
+      <div class="captured-area">
+        <div class="captured-label">自分の駒台</div>
+        <div id="captured-pieces-player" class="captured-box"></div>
+      </div>
+    </div>
+
+    <!-- 中央 -->
+    <div class="center-panel" style="flex: 1; text-align: center;">
+      <div id="board-container" style="position: relative; display: inline-block;">
+        <div id="board" class="board-area"></div>
+        <div id="thinking-banner" ...>🤖 AI 考え中...</div>
+      </div>
+    </div>
+
+    <!-- 右 -->
+    <div class="right-panel" id="right-panel"> ... </div>
+
+  </div>
+
+  <script src="{{ url_for('static', filename='js/index.js') }}"></script>
+
+</body>
+
+</html>

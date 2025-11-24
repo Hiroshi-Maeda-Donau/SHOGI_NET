@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>人対人対局</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+  <script>
+    window.SHOGI ??= {};
+    SHOGI.state ??= {};
+    SHOGI.state.kifuLenClient ??= 0;
+    window.currentKifu ??= [];
+    window.isResetting ??= false;
+    window.lastSelfKifuLen ??= 0;
+    console.log("🔴 SHOGI.state.kifuLenClient = ",SHOGI.state.kifuLenClient);
+  </script>
+</head>
+<body>
+  <script>
+    console.log("✅ HTML テンプレート実行中");
+    // どこか一度だけ（起動時すぐ）
+    //const S = (window.SHOGI ??= {}).state ??= {};
+    //(function guardKifuSetter(){
+      //let _k = S.kifuLenClient ?? 0;
+      //Object.defineProperty(S, "kifuLenClient", {
+        //configurable: true,
+        //get(){ return _k; },
+        //set(v){
+          //console.log("📏 kifuLenClient set:", _k, "→", v, "by", window.__kifuSetReason || "unknown");
+          //console.log(new Error("stack for kifuLenClient").stack);
+          //_k = v;
+        //}
+      //});
+    //})();
+
+  </script>
+
+  <!-- ログインID表示：右上固定 -->
+  <div id="login-id-display">
+    ID: <span id="login-id-text"></span>
+  </div>
+
+  <!-- タイトル中央 -->
+  <div style="text-align: center; margin-top: 20px;">
+    <div id="title-text" style="font-size: 32px; font-weight: bold;">
+      AI将棋
+    </div>
+  </div>
+  
+  <!-- メインレイアウト：将棋盤 + 左右 -->
+  <div class="main-layout" style="display: flex; margin-top: 10px;">
+    
+    <!-- 左 -->
+    <div class="left-panel">
+      <div class="captured-area">
+        <div class="captured-label">相手の駒台</div>
+        <div id="captured-pieces-opponent" class="captured-box"></div>
+      </div>
+      <div class="captured-area">
+        <div class="captured-label">自分の駒台</div>
+        <div id="captured-pieces-self" class="captured-box"></div>
+      </div>
+    </div>
+
+    <!-- 中央 -->
+    <div class="center-panel" style="flex: 1; text-align: center;">
+      <div id="board-container" style="position: relative; display: inline-block;">
+        <div id="board" class="board-area"></div>
+        <div id="thinking-banner" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- 右 -->
+    <div class="right-panel" id="right-panel"></div>
+
+  </div>
+
+  <script>
+    
+    const role = "{{ role }}";
+    const isSubView = (role === "sub");
+    const playerID = "{{ player_id }}";
+    const first = "{{ first }}";
+    const mainID = "{{ main_id }}";
+    const subID = "{{ sub_id }}";
+
+    const opponentID = (playerID === mainID) ? subID : mainID;
+    const gameMode = "match";  // 対人対局であることを示す
+
+    console.log("🎲対人対局スタート");
+    console.log("🟩 role =", role);
+    console.log("🟩 playerID =", playerID);
+    console.log("🟩 opponentID =", opponentID);
+    console.log("🟩 first =", first);
+
+    //document.getElementById("login-id-display").innerText = `👤 ID: ${playerID}`;
+    document.getElementById("login-id-text").innerText = `👤 ${playerID}`;
+
+    console.log("✅ match_game.js が正しく読み込まれました");
+  </script>
+  <script src="{{ url_for('static', filename='js/match_game.js') }}" defer></script>
+
+</body>
+</html>
+
+
