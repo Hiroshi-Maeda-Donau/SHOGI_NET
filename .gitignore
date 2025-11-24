@@ -1,0 +1,7 @@
+__pycache__/
+venv/
+venv30/
+venv310/
+*.pyc
+.DS_Store
+
